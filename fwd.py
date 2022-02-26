@@ -1,5 +1,6 @@
 import plotly.graph_objects as go
 import math
+import numpy as np
 '''
  class called joint for joinst
  it contains method for joints and using them
@@ -9,7 +10,7 @@ class frm:
         output frame
         it is the class for frame
         it should provide funtions for rotation and end effectors
-      '''  
+      '''
     def isframematrix(a):
         flag=True
         if type(a)==type([]):
@@ -34,7 +35,7 @@ class frm:
         return flag
     def __init__(self,f=[[1,0,0],[0,1,0],[0,0,1]]):
         if frm.isframematrix(f):
-            self.frame=f
+            self.frame=np.array(f)
         else:
             raise Exception("not a square matrix")
     def minimum(self):
@@ -51,30 +52,44 @@ class frm:
                     else:
                         mi=temp
         return mi
+    '''
     def divide(self,d):
-        #it divides the all values of frame by d 
+        #it divides the all values of frame by d
+        temp=self.frame
         for i in range(3):
             for j in range(3):
-                self.frame[i][j]=self.frame[i][j]/d
+                temp[i][j]=self.frame[i][j]/d
+    '''
     def unitize(self):
         #makes the frame into unit vector frame
         mi=self.minimum()
-        self.divide(mi)
-    def matmul(x):
+        return self.frame/mi
+        '''
+    def frmmul(x):
         #mat mul is used to multiply rotational matrix to matmul
+        temp=self.frame
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    temp[i][j]+=x[i][k]*self.frame[k][j]
         if ismatrix(x):
             pass
+            '''
+        
     def rotate(self,theta,axis):
         axises=['x','y','z']
+        t=np.deg2rad(theta)
+        c=np.cos
+        s=np.sin
         if axis not in axises:
             raise Exception('enter axis correctly either x,y,z')
-        #rot=[[],[],[]]
-        if axis=='x':
-            pass
-        if axis=='y':
-            pass
         if axis=='z':
-            pass
+            rot=np.array([[c(t),-s(t),0],[s(t),c(t),0],[0,0,1]])
+        if axis=='x':
+            rot=[[1,0,0],[0,c(t),-s(t)],[0,s(t),c(t)]]
+        if axis=='y':
+            rot=[[c(t),0,s(t)],[0,1,0],[-s(t),0,c(t)]]
+        return rot@np.transpose(self.frame)
         
 class joint:
     def __init__(*arg):
@@ -89,6 +104,6 @@ class arm:
 if(__name__=='__main__'):
     s=frm([[0,0,2],[4,0,4],[6,6,6]])
     print(s.frame)
-    s.unitize()
-    print(s.frame)
-    s.rotate(50,'x')
+    #s.unitize()
+    print(s.unitize())
+    print(s.rotate(50,'z'))
