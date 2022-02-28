@@ -11,6 +11,10 @@ class frm:
         it is the class for frame
         it should provide funtions for rotation and end effectors
       '''
+    def __str__(self):
+        return np.array_str(self.frame)
+    def __repr__(self):
+        return self.frame
     def isframematrix(a):
         flag=True
         if type(a)==type([]):
@@ -89,7 +93,35 @@ class frm:
             rot=[[1,0,0],[0,c(t),-s(t)],[0,s(t),c(t)]]
         if axis=='y':
             rot=[[c(t),0,s(t)],[0,1,0],[-s(t),0,c(t)]]
-        return rot@np.transpose(self.frame)
+        return np.trunc(rot@np.transpose(self.frame))
+    def locate(self,point):
+        #locate the value of the poin in the frame
+        #returns the ouput vector in this frame
+        pass
+    
+class point:
+    #A class used for 3d points
+    def __init__(self,x,y,z):
+        self.x=x
+        self.y=y
+        self.z=z
+        self.point=np.array([x,y,z])
+    def rotate(self,axis,theta):
+        axises=['x','y','z']
+        t=np.deg2rad(theta)
+        c=np.cos
+        s=np.sin
+        if axis not in axises:
+            raise Exception('enter axis correctly either x,y,z')
+        if axis=='z':
+            rot=np.array([[c(t),-s(t),0],[s(t),c(t),0],[0,0,1]])
+        if axis=='x':
+            rot=[[1,0,0],[0,c(t),-s(t)],[0,s(t),c(t)]]
+        if axis=='y':
+            rot=[[c(t),0,s(t)],[0,1,0],[-s(t),0,c(t)]]
+        return np.trunc(rot@np.transpose(self.point))
+        
+        
         
 class joint:
     def __init__(*arg):
@@ -100,10 +132,16 @@ class joint:
 class arm:
     def __init__():
         pass
-    
-if(__name__=='__main__'):
+def frmtest():
     s=frm([[0,0,2],[4,0,4],[6,6,6]])
     print(s.frame)
     #s.unitize()
     print(s.unitize())
     print(s.rotate(50,'z'))
+    print(s)
+def pointtest():
+    p=point(3,3,0)
+    s=p.rotate('x',90)
+    print(s)
+if(__name__=='__main__'):
+    pointtest()
