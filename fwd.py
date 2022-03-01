@@ -1,8 +1,10 @@
 import plotly.graph_objects as go
 import math
 import numpy as np
-class point:
+class point3d:
     #A class used for 3d points
+    def __repr__(self):
+        return self.point
     def __init__(self,x,y,z):
         self.x=x
         self.y=y
@@ -70,12 +72,19 @@ class frm:
                     flag=False
                     print('not a list')
         return flag
-    def __init__(self,f=[[1,0,0],[0,1,0],[0,0,1]],origin=point(0,0,0)):
-        if frm.isframematrix(f):
-            self.frame=np.array(f)
-            self.origin=origin
+    def __init__(self,f=[[1,0,0],[0,1,0],[0,0,1]],origin=point3d(0,0,0)):
+        if isinstance(f,type(np.array([]))):
+            if(f.shape==(3,3)):
+                self.frame=f
+                self.origin=origin
+            else:
+                raise Exception("not a 3*3 matrix")
         else:
-            raise Exception("not a square matrix")
+            if frm.isframematrix(f):
+                self.frame=np.array(f)
+                self.origin=origin
+            else:
+                raise Exception("not a square matrix")
     def minimum(self):
         #finds the minimum value and not zero
         #and returns it
@@ -114,7 +123,7 @@ class frm:
             pass
             '''
         
-    def rotate(self,theta,axis):
+    def rotate(self,axis,theta):
         axises=['x','y','z']
         t=np.deg2rad(theta)
         c=np.cos
@@ -124,14 +133,20 @@ class frm:
         if axis=='z':
             rot=np.array([[c(t),-s(t),0],[s(t),c(t),0],[0,0,1]])
         if axis=='x':
-            rot=np.array[[1,0,0],[0,c(t),-s(t)],[0,s(t),c(t)]]
+            rot=np.array([[1,0,0],[0,c(t),-s(t)],[0,s(t),c(t)]])
         if axis=='y':
-            rot=np.array[[c(t),0,s(t)],[0,1,0],[-s(t),0,c(t)]]
-        return np.around(rot@np.transpose(self.frame),decimals=4)
-    def locate(self,point):
+            rot=np.array([[c(t),0,s(t)],[0,1,0],[-s(t),0,c(t)]])
+        #print((np.around(rot@np.transpose(self.frame))).shape)
+        return frm(np.around(rot@np.transpose(self.frame),decimals=4))
+    def locate(self,p):
         #locate the value of the poin in the frame
         #returns the ouput vector in this frame
-        pass
+        if not isinstance(p,point3d):
+            raise Exception("locate requires argument instance of point p")
+        #print(self.frame.shape)
+        #print(type(p))
+        return self.frame@np.transpose(p.point)
+        
     def get_trace(self):
         o=self.origin
         f=self.frame
@@ -153,10 +168,10 @@ def frmtest():
     print(s.frame)
     #s.unitize()
     print(s.unitize())
-    print(s.rotate(50,'z'))
+    print(s.rotate('z',50))
     print(s)
 def pointtest():
-    p=point(3,3,3)
+    p=point3d(3,3,3)
     s=p.rotate('x',90)
     print(s)
     p.visualize()
@@ -164,10 +179,44 @@ def pointtest():
     fig.add_trace(p.get_trace())
     fig.show()
 def testing_mm():
-    f=frm(origin=point(2,2,2))
+    f=frm(origin=point3d(2,2,2))
     fig=go.Figure(f.get_trace())
     #fig.add_trace(f.get_trace())
     fig.show()
+def testing_locate():
+    p=point3d(1,1,1)
+    f=frm()
+    f1=f.rotate('y',90)
+    print(f.locate(p))
+    print(f1.locate(p))
+def testing_frame_rotation():
+    flag=True
+    f=frm()
+    f1=frm()
+    while(flag):
+        print('1 to change frame')
+        print('q to quit ')
+        temp=input('enter values to chage frame :').split()
+        if(len(temp)==1):
+            if(temp[0]==1):
+                pass
+            elif(temp[0]=='q'):
+                flag=False
+            else:
+                print('enter correctly')
+        elif(len(temp)==2):
+            axis=temp[0]
+            theta=int(temp[1])
+            f1=f.rotate(axis,theta)
+            fig=go.Figure(f.get_trace()+f1.get_trace())
+            #fig.add_trace(f.get_trace())
+            #fig.add_trace(f1.get_trace())
+            fig.show()
+        else:
+            print('correct values')
+        
 if(__name__=='__main__'):
     #pointtest()
-    testing_mm()
+    #testing_mm()
+    #testing_locate()
+    testing_frame_rotation()
