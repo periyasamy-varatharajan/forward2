@@ -1,6 +1,11 @@
 import plotly.graph_objects as go
+from plotly.graph_objects import Figure
 import math
 import numpy as np
+class figure(Figure):
+    def add_frame(self,frame):
+        for i in frame.get_trace():
+            self.add_trace(i)
 class point3d:
     #A class used for 3d points
     def __repr__(self):
@@ -23,10 +28,11 @@ class point3d:
             rot=np.array([[1,0,0],[0,c(t),-s(t)],[0,s(t),c(t)]])
         if axis=='y':
             rot=np.array([[c(t),0,s(t)],[0,1,0],[-s(t),0,c(t)]])
-        return np.around(rot@np.transpose(self.point),decimals=4)
+        nmp=np.around(rot@np.transpose(self.point),decimals=4)
+        return point3d(nmp[0],nmp[1],nmp[2])
     def visualize(self):
         #used to visualize files 
-        fig=go.Figure()
+        fig=figure()
         point_trace=go.Scatter3d(x=[0,self.x],y=[0,self.y],z=[0,self.z])
         fig.add_trace(point_trace)
         fig.show()
@@ -137,7 +143,7 @@ class frm:
         if axis=='y':
             rot=np.array([[c(t),0,s(t)],[0,1,0],[-s(t),0,c(t)]])
         #print((np.around(rot@np.transpose(self.frame))).shape)
-        return frm(np.around(rot@np.transpose(self.frame),decimals=4))
+        return frm(np.transpose(np.around(rot@np.transpose(self.frame),decimals=4)))
     def locate(self,p):
         #locate the value of the poin in the frame
         #returns the ouput vector in this frame
@@ -147,22 +153,40 @@ class frm:
         #print(type(p))
         return self.frame@np.transpose(p.point)
         
-    def get_trace(self):
-        o=self.origin
+    def get_trace(self,origin=point3d(0,0,0)):
+        o=origin
         f=self.frame
-        ax1=go.Scatter3d(x=[o.x,f[0][0]],y=[o.y,f[0][1]],z=[o.z,f[0][2]])
-        ax2=go.Scatter3d(x=[o.x,f[1][0]],y=[o.y,f[1][1]],z=[o.z,f[1][2]])
-        ax3=go.Scatter3d(x=[o.x,f[2][0]],y=[o.y,f[2][1]],z=[o.z,f[2][2]])
+        ax1=go.Scatter3d(x=[o.x,o.x+f[0][0]],y=[o.y,o.y+f[0][1]],z=[o.z,o.z+f[0][2]])
+        ax2=go.Scatter3d(x=[o.x,o.x+f[1][0]],y=[o.y,o.y+f[1][1]],z=[o.z,o.z+f[1][2]])
+        ax3=go.Scatter3d(x=[o.x,o.x+f[2][0]],y=[o.y,o.y+f[2][1]],z=[o.z,o.z+f[2][2]])
         return [ax1,ax2,ax3]
 class joint:
-    def __init__(*arg):
-        end=arg[0]
-        axis=arg[2]
-        typ=arg[3]
-        
+    def __init__(self,link,endframe,axis):
+        if not isinstance(link,point3d):
+            raise Exception("pass points in point format")
+        if not isinstance(endframe,type(frm())):
+            raise Exception("pass frame in frm format")
+        self.link=link
+        self.endframe=endframe
+        self.axis=axis
+    def set_angle(self,theta):
+         new_link=self.link.rotate(self.axis,theta)
+         new_endframe=self.endframe.rotate(self.axis,theta)
+         return joint(new_link,new_endframe,self.axis)
+    def visualize(self):
+        f=frm()
+        fig=figure()
+        fig.add_traces(f.get_trace())
+        fig.add_traces(self.link.get_trace())
+        fig.add_traces(self.endframe.get_trace(self.link))
+        fig.show()        
 class arm:
-    def __init__():
-        pass
+    def __init__(joints):
+        if not isinstance(joints,list):
+            raise Exception("Enter joints in list formats")
+        self.joints=joints
+            
+        
 def frmtest():
     s=frm([[0,0,2],[4,0,4],[6,6,6]])
     print(s.frame)
@@ -175,12 +199,12 @@ def pointtest():
     s=p.rotate('x',90)
     print(s)
     p.visualize()
-    fig=go.Figure()
+    fig=figure()
     fig.add_trace(p.get_trace())
     fig.show()
 def testing_mm():
     f=frm(origin=point3d(2,2,2))
-    fig=go.Figure(f.get_trace())
+    fig=figure(f.get_trace())
     #fig.add_trace(f.get_trace())
     fig.show()
 def testing_locate():
@@ -208,15 +232,21 @@ def testing_frame_rotation():
             axis=temp[0]
             theta=int(temp[1])
             f1=f.rotate(axis,theta)
-            fig=go.Figure(f.get_trace()+f1.get_trace())
-            #fig.add_trace(f.get_trace())
-            #fig.add_trace(f1.get_trace())
+            fig=figure()
+            fig.add_traces(f.get_trace())
+            fig.add_traces(f1.get_trace())
             fig.show()
         else:
-            print('correct values')
+            print('enter correct values')
+def testing_joint():
+    j=joint(point3d(1,1,1),frm(),'x')
+    j.visualize()
+    j1=j.set_angle(90)
+    j1.visualize()
         
 if(__name__=='__main__'):
     #pointtest()
     #testing_mm()
     #testing_locate()
-    testing_frame_rotation()
+    #testing_frame_rotation()
+    testing_joint()
