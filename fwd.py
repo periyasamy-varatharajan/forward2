@@ -1,6 +1,5 @@
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure
-import math
 import numpy as np
 class figure(Figure):
     def add_frame(self,frame):
@@ -15,6 +14,8 @@ class point3d:
         self.y=y
         self.z=z
         self.point=np.array([x,y,z])
+    def __getitem__(self,key):
+        return self.point[key]
     def rotate(self,axis,theta):
         axises=['x','y','z']
         t=np.deg2rad(theta)
@@ -36,8 +37,8 @@ class point3d:
         point_trace=go.Scatter3d(x=[0,self.x],y=[0,self.y],z=[0,self.z])
         fig.add_trace(point_trace)
         fig.show()
-    def get_trace(self):
-        return go.Scatter3d(x=[0,self.x],y=[0,self.y],z=[0,self.z])
+    def get_trace(self,o=np.array([0,0,0])):
+        return go.Scatter3d(x=[o[0],o[0]+self.x],y=[o[1],o[1]+self.y],z=[o[2],o[2]+self.z])
 
 '''
  class called joint for joinst
@@ -52,8 +53,9 @@ class frm:
     #origin=point(0,0,0)
     def __str__(self):
         return np.array_str(self.frame)
-    def __repr__(self):
+    '''def __repr__(self):
         return self.frame
+        '''
     def __getitem__(self,argument):
         return self.frame[argument]
     def isframematrix(a):
@@ -155,11 +157,17 @@ class frm:
         
     def get_trace(self,origin=point3d(0,0,0)):
         o=origin
+        print(o)
         f=self.frame
-        ax1=go.Scatter3d(x=[o.x,o.x+f[0][0]],y=[o.y,o.y+f[0][1]],z=[o.z,o.z+f[0][2]])
-        ax2=go.Scatter3d(x=[o.x,o.x+f[1][0]],y=[o.y,o.y+f[1][1]],z=[o.z,o.z+f[1][2]])
-        ax3=go.Scatter3d(x=[o.x,o.x+f[2][0]],y=[o.y,o.y+f[2][1]],z=[o.z,o.z+f[2][2]])
+        ax1=go.Scatter3d(x=[o[0],o[0]+f[0][0]],y=[o[1],o[1]+f[0][1]],z=[o[2],o[2]+f[0][2]])
+        ax2=go.Scatter3d(x=[o[0],o[0]+f[1][0]],y=[o[1],o[1]+f[1][1]],z=[o[2],o[2]+f[1][2]])
+        ax3=go.Scatter3d(x=[o[0],o[0]+f[2][0]],y=[o[1],o[1]+f[2][1]],z=[o[2],o[2]+f[2][2]])
         return [ax1,ax2,ax3]
+    def visualize(self):
+        fig=figure()
+        fig.add_traces(self.get_trace())
+        fig.add_traces(frm().get_trace())
+        fig.show()
 class joint:
     def __init__(self,link,endframe,axis):
         if not isinstance(link,point3d):
@@ -179,13 +187,25 @@ class joint:
         fig.add_traces(f.get_trace())
         fig.add_traces(self.link.get_trace())
         fig.add_traces(self.endframe.get_trace(self.link))
-        fig.show()        
+        fig.show()
+    def get_trace(self,origin=point3d(0,0,0)):
+        print("inside joint self.link.gert_trace",[self.link.get_trace(origin)])
+        print("self.link.point:",self.link.point)
+        print(origin.point)
+        return([self.link.get_trace(origin)]+self.endframe.get_trace(origin.point+self.link.point))
 class arm:
-    def __init__(joints):
+    def __init__(self,joints):
         if not isinstance(joints,list):
             raise Exception("Enter joints in list formats")
         self.joints=joints
-            
+    def visualize(self):
+        fig=figure()
+        print(self.joints[0].get_trace())
+        fig.add_traces(self.joints[0].get_trace())
+        for i in range(1,len(self.joints)):
+            temp=self.joints[i].get_trace(self.joints[i-1].link)
+            fig.add_traces(temp)
+        fig.show()
         
 def frmtest():
     s=frm([[0,0,2],[4,0,4],[6,6,6]])
@@ -196,11 +216,11 @@ def frmtest():
     print(s)
 def pointtest():
     p=point3d(3,3,3)
-    s=p.rotate('x',90)
-    print(s)
+    #s=p.rotate('x',90)
+    #print(s)
     p.visualize()
     fig=figure()
-    fig.add_trace(p.get_trace())
+    fig.add_trace(p.get_trace([1,1,1]))
     fig.show()
 def testing_mm():
     f=frm(origin=point3d(2,2,2))
@@ -243,10 +263,21 @@ def testing_joint():
     j.visualize()
     j1=j.set_angle(90)
     j1.visualize()
+def frm_test():
+    n=frm([[1.,0.,0.],[ 0.,0.7071,0.7071],[ 0.,-0.7071,0.7071]])
+    n.visualize()
+def arm_test1():
+    j1=joint(point3d(0,0,0),frm(),'x')
+    j2=joint(point3d(1,1,1),frm(),'y')
+    j3=joint(point3d(-1,1,0),frm(),'z')
+    a=arm([j1,j2,j3])
+    a.visualize()
         
 if(__name__=='__main__'):
     #pointtest()
     #testing_mm()
     #testing_locate()
     #testing_frame_rotation()
-    testing_joint()
+    #testing_joint()
+    #frm_test()
+    arm_test1()
