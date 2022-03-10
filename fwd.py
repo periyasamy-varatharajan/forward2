@@ -157,7 +157,7 @@ class frm:
         
     def get_trace(self,origin=point3d(0,0,0)):
         o=origin
-        print(o)
+        #print(o)
         f=self.frame
         ax1=go.Scatter3d(x=[o[0],o[0]+f[0][0]],y=[o[1],o[1]+f[0][1]],z=[o[2],o[2]+f[0][2]])
         ax2=go.Scatter3d(x=[o[0],o[0]+f[1][0]],y=[o[1],o[1]+f[1][1]],z=[o[2],o[2]+f[1][2]])
@@ -198,14 +198,23 @@ class arm:
         if not isinstance(joints,list):
             raise Exception("Enter joints in list formats")
         self.joints=joints
+        self.current_joints=joints
+        self.angles=[0]*len(joints)
+        self.length=len(self.angles)
     def visualize(self):
         fig=figure()
-        print(self.joints[0].get_trace())
-        fig.add_traces(self.joints[0].get_trace())
+        print(self.current_joints[0].get_trace())
+        fig.add_traces(self.current_joints[0].get_trace())
         for i in range(1,len(self.joints)):
-            temp=self.joints[i].get_trace(self.joints[i-1].link)
+            temp=self.current_joints[i].get_trace(self.current_joints[i-1].link)
             fig.add_traces(temp)
         fig.show()
+    def set_angles(self,angles):
+        self.angles=angles[:]
+        for i in range(self.length):
+            self.current_joints[i]=self.joints[i].set_angle(angles[i])
+            
+        
         
 def frmtest():
     s=frm([[0,0,2],[4,0,4],[6,6,6]])
@@ -272,6 +281,16 @@ def arm_test1():
     j3=joint(point3d(-1,1,0),frm(),'z')
     a=arm([j1,j2,j3])
     a.visualize()
+def arm_test2():
+    j1=joint(point3d(0,0,0),frm(),'x')
+    j2=joint(point3d(1,1,1),frm(),'x')
+    j3=joint(point3d(1,1,1),frm(),'x')
+    a=arm([j1,j2,j3])
+    #a.visualize()
+    a.set_angles([90,0,0])
+    a.visualize()
+    
+    
         
 if(__name__=='__main__'):
     #pointtest()
@@ -280,4 +299,5 @@ if(__name__=='__main__'):
     #testing_frame_rotation()
     #testing_joint()
     #frm_test()
-    arm_test1()
+    #arm_test1()
+    arm_test2()
